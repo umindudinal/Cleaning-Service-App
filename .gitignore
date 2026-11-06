@@ -1,0 +1,123 @@
+# ==============================================================================
+# JaniFlow - Root .gitignore
+# Covers Backend (Node.js), Admin Dashboard (React/Vite), and Mobile App (Flutter)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment Variables & Secrets (CRITICAL)
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.local
+
+# ------------------------------------------------------------------------------
+# 2. Node.js & Dependencies (Backend & Admin Dashboard)
+# ------------------------------------------------------------------------------
+node_modules/
+*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+lerna-debug.log*
+
+# Production Build outputs (Vite / React)
+dist/
+*/dist/
+dist-ssr/
+*.local
+
+# Backend File Uploads & Generated Reports (Dynamic Data)
+uploads/
+*/uploads/
+uploads/reports/
+uploads/photos/
+*.pdf
+
+# ------------------------------------------------------------------------------
+# 3. Flutter & Dart (Mobile App)
+# ------------------------------------------------------------------------------
+.dart_tool/
+*/.dart_tool/
+**/build/
+.packages
+.pub/
+.pub-cache/
+pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Symbol & profiling files
+app.*.symbols
+app.*.map.json
+
+# Android Specific (Flutter)
+**/android/.gradle/
+**/android/captures/
+**/android/gradle/
+**/android/local.properties
+**/android/app/build/
+**/android/**/*.class
+**/android/**/*.ap_
+**/android/**/*.dex
+*.apk
+*.aab
+
+# iOS Specific (Flutter)
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/ServiceDefinitions.json
+*.ipa
+
+# Windows & Desktop Specific (Flutter)
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+*.pdb
+*.exe
+*.dll
+
+# ------------------------------------------------------------------------------
+# 4. IDEs, Editors & Tooling
+# ------------------------------------------------------------------------------
+# VS Code
+.vscode/
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains / Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# AI Assistant artifacts & cache
+.gemini/
+brain/
+
+# ------------------------------------------------------------------------------
+# 5. Operating System Junk
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
