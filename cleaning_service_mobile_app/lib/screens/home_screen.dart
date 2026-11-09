@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final List<dynamic> all = jobsResult['data'] ?? [];
         totalAssigned = all.length;
         completedCount = all.where((j) => (j['status'] ?? '').toString().toLowerCase() == 'completed').length;
-        
+
         // STRICTLY FILTER: Only keep jobs that are NOT completed
         pendingJobs = all.where((j) => (j['status'] ?? '').toString().toLowerCase() != 'completed').toList();
 
@@ -103,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onSelectJob(dynamic job) async {
     if (selectedJob?['id'] == job['id']) return;
+    HapticFeedback.selectionClick();
 
     setState(() {
       selectedJob = job;
@@ -127,9 +128,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _copyToClipboard(String text, String label) {
     if (text.isEmpty) return;
     Clipboard.setData(ClipboardData(text: text));
+    HapticFeedback.lightImpact();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$label copied to clipboard'),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text('$label copied to clipboard'),
+          ],
+        ),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -137,7 +145,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Color _getAvatarColor(String name) {
+    const colors = [
+      Color(0xFF2563EB), // Blue
+      Color(0xFF059669), // Emerald
+      Color(0xFF7C3AED), // Violet
+      Color(0xFFD97706), // Amber
+      Color(0xFFDB2777), // Pink
+      Color(0xFF0891B2), // Cyan
+    ];
+    if (name.isEmpty) return colors[0];
+    final code = name.codeUnits.fold(0, (prev, elem) => prev + elem);
+    return colors[code % colors.length];
+  }
+
   Future<void> _openChecklist(dynamic job) async {
+    HapticFeedback.mediumImpact();
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -145,12 +168,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (result == true) {
-      // Refresh: job is now completed so it will disappear from home screen
       fetchData();
     }
   }
 
   void _openHistory() {
+    HapticFeedback.lightImpact();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -160,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    HapticFeedback.lightImpact();
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -168,13 +192,13 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Confirm Sign Out', style: AppStyles.title),
         content: const Text(
-          'Are you sure you want to end your session?',
+          'Are you sure you want to end your current session?',
           style: AppStyles.body,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -184,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Sign Out'),
+            child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -207,6 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final activeCount = pendingJobs.length;
+    final shiftProgress = totalAssigned > 0 ? (completedCount / totalAssigned) : 0.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -219,23 +244,37 @@ class _HomeScreenState extends State<HomeScreen> {
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1, color: AppColors.border),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text(
-              'JaniFlow',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.3,
-                color: AppColors.textPrimary,
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: const Icon(Icons.cleaning_services_rounded, color: AppColors.primary, size: 20),
             ),
-            if (staffEmail.isNotEmpty)
-              Text(
-                staffEmail,
-                style: AppStyles.caption,
-              ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'JaniFlow',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  staffEmail.isNotEmpty ? staffEmail : 'Field Operations',
+                  style: AppStyles.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ],
         ),
         actions: [
@@ -272,14 +311,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? _buildErrorView()
                 : SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Shift Progress Metric Strip
-                        _buildMetricStrip(totalAssigned, activeCount, completedCount),
+                        _buildMetricStrip(totalAssigned, activeCount, completedCount, shiftProgress),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 22),
 
                         // If no pending jobs are left
                         if (pendingJobs.isEmpty)
@@ -290,32 +329,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'SELECT CUSTOMER',
+                                'ACTIVE CLIENT ASSIGNMENT',
                                 style: AppStyles.overline,
                               ),
-                              InkWell(
-                                onTap: _openHistory,
-                                borderRadius: BorderRadius.circular(6),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: const [
-                                      Icon(Icons.history_rounded, size: 14, color: AppColors.accent),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'History',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.accent,
-                                        ),
-                                      ),
-                                      Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.accent),
-                                    ],
+                              if (pendingJobs.length > 1)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceSubtle,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${pendingJobs.length} Clients Pending',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -323,17 +351,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Customer Selector Dropdown
                           _buildCustomerDropdown(),
 
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 18),
 
                           // Active Work Order Card
                           if (selectedJob != null) ...[
                             _buildSelectedCustomerCard(selectedJob),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
                             _buildInspectionChecklistSection(),
                           ],
                         ],
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 36),
                       ],
                     ),
                   ),
@@ -341,38 +369,72 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMetricStrip(int total, int active, int completed) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricTile(
-            label: 'Active Tasks',
-            value: '$active',
-            accentColor: AppColors.warning,
+  Widget _buildMetricStrip(int total, int active, int completed, double progress) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: AppStyles.cardDecoration(radius: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Today\'s Shift Progress', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text(
+                '$completed of $total Visits (${(progress * 100).round()}%)',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: InkWell(
-            onTap: _openHistory,
-            borderRadius: BorderRadius.circular(12),
-            child: _buildMetricTile(
-              label: 'Completed',
-              value: '$completed',
-              accentColor: AppColors.success,
-              showHistoryHint: true,
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: AppColors.surfaceSubtle,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress == 1.0 ? AppColors.success : AppColors.primary,
+              ),
+              minHeight: 6,
             ),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildMetricTile(
-            label: 'Total Shift',
-            value: '$total',
-            accentColor: AppColors.primary,
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: AppColors.border),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildMetricTile(
+                  label: 'Pending Visits',
+                  value: '$active',
+                  accentColor: AppColors.warning,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: _openHistory,
+                  borderRadius: BorderRadius.circular(10),
+                  child: _buildMetricTile(
+                    label: 'Completed',
+                    value: '$completed',
+                    accentColor: AppColors.success,
+                    showHistoryHint: true,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMetricTile(
+                  label: 'Total Shift',
+                  value: '$total',
+                  accentColor: AppColors.primary,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -383,8 +445,12 @@ class _HomeScreenState extends State<HomeScreen> {
     bool showHistoryHint = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      decoration: AppStyles.cardDecoration(radius: 12),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -402,21 +468,21 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: AppStyles.caption,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textMuted),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (showHistoryHint)
-                const Icon(Icons.chevron_right_rounded, size: 14, color: AppColors.textMuted),
+                const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.textMuted),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
               letterSpacing: -0.5,
             ),
@@ -447,6 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
             final customer = job['customers'] ?? {};
             final name = customer['name'] ?? 'Customer';
             final address = customer['address'] ?? '';
+            final avatarColor = _getAvatarColor(name);
 
             return DropdownMenuItem<String>(
               value: job['id']?.toString(),
@@ -456,16 +523,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceSubtle,
+                      color: avatarColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       name.isNotEmpty ? name[0].toUpperCase() : 'C',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                        color: avatarColor,
                       ),
                     ),
                   ),
@@ -478,8 +545,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                           maxLines: 1,
@@ -513,8 +580,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final customer = job['customers'] ?? {};
     final customerName = customer['name'] ?? 'Customer';
     final customerAddress = customer['address'] ?? 'No address provided';
-    final customerPhone = customer['phone'] ?? 'No phone provided';
+    final customerPhone = customer['phone'] ?? '';
     final customerEmail = customer['email'] ?? '';
+    final avatarColor = _getAvatarColor(customerName);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -524,8 +592,25 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Header Row
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: avatarColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  customerName.isNotEmpty ? customerName[0].toUpperCase() : 'C',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: avatarColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,26 +622,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'Assigned Cleaning Task',
-                      style: AppStyles.caption,
-                    ),
+                    const Text('Assigned Service Location', style: AppStyles.caption),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.warningBg,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
-                child: const Text(
-                  'Awaiting Inspection',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
-                  ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.pending_actions_rounded, size: 12, color: AppColors.warning),
+                    SizedBox(width: 4),
+                    Text(
+                      'Ready',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -566,71 +656,104 @@ class _HomeScreenState extends State<HomeScreen> {
           const Divider(height: 1, color: AppColors.border),
           const SizedBox(height: 14),
 
-          // Address Row
+          // Address with Copy Action
           InkWell(
             onTap: () => _copyToClipboard(customerAddress, 'Address'),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textMuted),
+                  const Icon(Icons.location_on_outlined, size: 18, color: AppColors.primary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       customerAddress,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.3),
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.copy_rounded, size: 14, color: AppColors.textMuted),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(Icons.copy_rounded, size: 12, color: AppColors.textMuted),
+                  ),
                 ],
               ),
             ),
           ),
 
-          const SizedBox(height: 6),
-
-          // Phone Row
-          InkWell(
-            onTap: () => _copyToClipboard(customerPhone, 'Phone number'),
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  const Icon(Icons.phone_outlined, size: 18, color: AppColors.textMuted),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      customerPhone,
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.copy_rounded, size: 14, color: AppColors.textMuted),
-                ],
-              ),
-            ),
-          ),
-
-          if (customerEmail.isNotEmpty) ...[
-            const SizedBox(height: 6),
+          // Contact Actions (Phone & Email)
+          if (customerPhone.isNotEmpty || customerEmail.isNotEmpty) ...[
+            const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.mail_outline_rounded, size: 18, color: AppColors.textMuted),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    customerEmail,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                if (customerPhone.isNotEmpty)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _copyToClipboard(customerPhone, 'Phone number'),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.phone_rounded, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                customerPhone,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.copy_rounded, size: 12, color: AppColors.textMuted),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                if (customerPhone.isNotEmpty && customerEmail.isNotEmpty)
+                  const SizedBox(width: 8),
+                if (customerEmail.isNotEmpty)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _copyToClipboard(customerEmail, 'Email address'),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSubtle,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.mail_rounded, size: 14, color: AppColors.accent),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                customerEmail,
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.copy_rounded, size: 12, color: AppColors.textMuted),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -649,25 +772,25 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Assigned Checklist', style: AppStyles.title),
+              const Text('Assigned Inspection Items', style: AppStyles.title),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceSubtle,
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '${adminQuestions.length} Items',
                   style: const TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           if (isLoadingQuestions)
             const Padding(
@@ -702,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: adminQuestions.length,
-              separatorBuilder: (context, index) => const Divider(height: 16, color: AppColors.border),
+              separatorBuilder: (context, index) => const Divider(height: 14, color: AppColors.border),
               itemBuilder: (context, index) {
                 final q = adminQuestions[index];
                 return Row(
@@ -743,24 +866,32 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
           // Primary CTA Button
           SizedBox(
             width: double.infinity,
             height: 48,
-            child: ElevatedButton.icon(
+            child: ElevatedButton(
               onPressed: () => _openChecklist(selectedJob),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: const Text(
-                'Start Inspection Checklist',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.assignment_turned_in_rounded, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Start Inspection Checklist (${adminQuestions.length} Items)',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.arrow_forward_rounded, size: 16),
+                ],
               ),
             ),
           ),
@@ -772,50 +903,57 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildAllCaughtUpView() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
-      decoration: AppStyles.cardDecoration(radius: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      decoration: AppStyles.cardDecoration(radius: 16),
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               color: AppColors.successBg,
               shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFA7F3D0), width: 2),
             ),
-            child: const Icon(Icons.task_alt_rounded, size: 28, color: AppColors.success),
+            child: const Icon(Icons.task_alt_rounded, size: 32, color: AppColors.success),
           ),
           const SizedBox(height: 16),
-          const Text('All Caught Up', style: AppStyles.header),
+          const Text('All Caught Up! 🎉', style: AppStyles.header),
           const SizedBox(height: 6),
           const Text(
-            'You have no pending cleaning visits right now. All assigned inspections have been submitted and emailed.',
+            'You have zero pending cleaning visits remaining for today. All assigned inspections have been submitted and emailed.',
             textAlign: TextAlign.center,
             style: AppStyles.body,
           ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _openHistory,
-            icon: const Icon(Icons.history_rounded, size: 18),
-            label: const Text('View Completed Job History'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          const SizedBox(height: 22),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _openHistory,
+              icon: const Icon(Icons.history_rounded, size: 18),
+              label: const Text('View Completed Job History', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
           const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: fetchData,
-            icon: const Icon(Icons.refresh_rounded, size: 18),
-            label: const Text('Sync Tasks'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              side: const BorderSide(color: AppColors.borderStrong),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: fetchData,
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Refresh & Check for New Tasks', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                side: const BorderSide(color: AppColors.borderStrong),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ],
@@ -830,17 +968,27 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_rounded, size: 44, color: AppColors.textMuted),
-            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.dangerBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_rounded, size: 36, color: AppColors.danger),
+            ),
+            const SizedBox(height: 14),
+            const Text('Connection Issue', style: AppStyles.title),
+            const SizedBox(height: 6),
             Text(errorMessage, textAlign: TextAlign.center, style: AppStyles.body),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
               onPressed: fetchData,
               icon: const Icon(Icons.refresh_rounded, size: 16),
               label: const Text('Retry Connection'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.border),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
             ),

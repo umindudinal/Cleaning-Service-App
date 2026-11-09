@@ -3,18 +3,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/api_service.dart';
 import 'theme/app_theme.dart';
 
-const String supabaseUrl = 'https://YOUR-PROJECT-ID.supabase.co';
-const String supabaseAnonKey = 'YOUR-ANON-KEY';
+const String supabaseUrl = 'https://iactnhptqkctvqrerhpk.supabase.co';
+const String supabaseAnonKey = 'sb_publishable_MA0-SjihXQN3X8dKascTFA_B6lPO_vi';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: supabaseUrl,
-    publishableKey: supabaseAnonKey,
-  );
+  // Initialize saved settings & server endpoint
+  await ApiService.init();
+
+  try {
+    await Supabase.initialize(
+      url: supabaseUrl,
+      anonKey: supabaseAnonKey,
+    );
+  } catch (e) {
+    debugPrint('Supabase optional init notice: $e');
+  }
 
   runApp(const CleaningStaffApp());
 }
