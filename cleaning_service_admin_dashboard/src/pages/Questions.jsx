@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, ClipboardList, Filter } from 'lucide-react';
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
+import ConfirmModal from '../components/common/ConfirmModal';
 import QuestionTable from '../components/questions/QuestionTable';
 import QuestionModal from '../components/questions/QuestionModal';
 import { AdminAPI } from '../services/api';
@@ -16,6 +17,8 @@ export default function Questions() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadQuestionsAndCustomers();
@@ -81,16 +84,24 @@ export default function Questions() {
     }
   };
 
-  const handleDeleteQuestion = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this checklist question?')) return;
+  const handleDeleteQuestion = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      const res = await AdminAPI.deleteQuestion(id);
+      const res = await AdminAPI.deleteQuestion(deleteTargetId);
       if (res.success) {
         showToast('Checklist question deleted successfully!');
+        setDeleteTargetId(null);
         loadQuestionsAndCustomers();
       }
     } catch (err) {
       showToast(err.message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -123,17 +134,6 @@ export default function Questions() {
       <Toast message={message} />
 
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
-        {/* Info Banner */}
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start space-x-3 text-amber-900 text-sm">
-          <ClipboardList className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-          <div>
-            <strong className="font-bold">Customer-Specific Mobile App Checklist:</strong>
-            <p className="text-xs text-amber-800 mt-0.5">
-              Select the relevant customer when adding an inspection question. On the Mobile App, when cleaning staff selects that customer, <strong>only the checklist questions configured for that specific customer will be displayed!</strong>
-            </p>
-          </div>
-        </div>
-
         {/* Filter by Customer Toolbar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200">
           <div className="flex items-center space-x-2 text-sm font-semibold text-slate-700 w-full sm:w-auto">
@@ -179,6 +179,16 @@ export default function Questions() {
         customers={customers}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveQuestion}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Question"
+        message="Are you sure you want to delete this inspection question? It will no longer be available in checklists."
+        confirmText="Delete Question"
+        isLoading={isDeleting}
       />
     </div>
   );

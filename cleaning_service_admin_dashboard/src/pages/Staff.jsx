@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, UserCheck, ShieldCheck } from 'lucide-react';
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
+import ConfirmModal from '../components/common/ConfirmModal';
 import StaffCard from '../components/staff/StaffCard';
 import StaffModal from '../components/staff/StaffModal';
 import { AdminAPI } from '../services/api';
@@ -11,6 +12,8 @@ export default function Staff() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadStaff();
@@ -48,16 +51,24 @@ export default function Staff() {
     }
   };
 
-  const handleDeleteStaff = async (id) => {
-    if (!window.confirm('Are you sure you want to remove this staff member?')) return;
+  const handleDeleteStaff = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      const res = await AdminAPI.deleteStaff(id);
+      const res = await AdminAPI.deleteStaff(deleteTargetId);
       if (res.success) {
         showToast('Staff member removed successfully!');
+        setDeleteTargetId(null);
         loadStaff();
       }
     } catch (err) {
       showToast(err.response?.data?.error || err.message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -82,17 +93,6 @@ export default function Staff() {
       <Toast message={message} />
 
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
-        {/* Info Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start space-x-3 text-blue-900 text-sm">
-          <ShieldCheck className="w-5 h-5 shrink-0 text-blue-600 mt-0.5" />
-          <div>
-            <strong className="font-bold">Cleaning Staff Authentication:</strong>
-            <p className="text-xs text-blue-700 mt-0.5">
-              Staff members use their registered email and password to log in via the Cleaning Staff Mobile App.
-            </p>
-          </div>
-        </div>
-
         {/* Staff Grid */}
         {staffList.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
@@ -113,6 +113,16 @@ export default function Staff() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveStaff}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Remove Staff Member"
+        message="Are you sure you want to remove this cleaning staff member? Their access will be revoked."
+        confirmText="Remove Staff"
+        isLoading={isDeleting}
       />
     </div>
   );

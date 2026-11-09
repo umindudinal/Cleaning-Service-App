@@ -3,6 +3,12 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 
+// Auth & First-time Admin Setup
+router.get('/check-status', adminController.checkAdminStatus);
+router.get('/check-admin', adminController.checkAdminStatus);
+router.post('/register', adminController.registerAdmin);
+router.post('/login', adminController.loginAdmin);
+
 // Overview Stats
 router.get('/stats', adminController.getStats);
 

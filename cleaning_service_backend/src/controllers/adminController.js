@@ -4,6 +4,48 @@ const fs = require('fs');
 const supabase = require('../services/supabaseService');
 const pdfService = require('../services/pdfService');
 
+// Helper to create Supabase Auth user:
+// Tries auth.admin.createUser first (bypasses email confirmation & rate limit if service_role key is used).
+// Otherwise falls back to auth.signUp.
+async function createAuthAccount(email, password, metadata) {
+    try {
+        if (supabase.auth && supabase.auth.admin && typeof supabase.auth.admin.createUser === 'function') {
+            const adminRes = await supabase.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: metadata
+            });
+            if (adminRes.data?.user) {
+                return { user: adminRes.data.user, session: null, error: null };
+            }
+            if (adminRes.error && adminRes.error.status !== 401 && adminRes.error.code !== 'no_authorization') {
+                return { user: null, session: null, error: adminRes.error };
+            }
+        }
+    } catch (e) {
+        // Fallback to signUp
+    }
+
+    const signupRes = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: metadata
+        }
+    });
+
+    if (signupRes.error) {
+        let msg = signupRes.error.message;
+        if (msg && msg.toLowerCase().includes('rate limit')) {
+            msg = "Supabase Email Rate Limit Exceeded: Supabase Free Tier allows only ~3 emails per hour. To fix: Open Supabase Dashboard -> Authentication -> Providers -> Email and turn OFF 'Confirm email', or add your SUPABASE_SERVICE_ROLE_KEY to backend .env.";
+        }
+        return { user: null, session: null, error: { ...signupRes.error, message: msg } };
+    }
+
+    return { user: signupRes.data?.user, session: signupRes.data?.session, error: null };
+}
+
 // 1. Dashboard Overview Stats
 exports.getStats = async (req, res) => {
     try {
@@ -130,19 +172,17 @@ exports.createStaff = async (req, res) => {
         }
 
         // Try creating auth user in Supabase
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        const { user: authUser, error: authError } = await createAuthAccount(
             email,
-            password: password || 'CleanPro@123',
-            options: {
-                data: { full_name: fullName, role: 'staff' }
-            }
-        });
+            password || 'CleanPro@123',
+            { full_name: fullName, role: 'staff' }
+        );
 
         if (authError) {
             return res.status(400).json({ success: false, error: authError.message });
         }
 
-        const userId = authData.user?.id;
+        const userId = authUser?.id;
         if (userId) {
             const { error: profileError } = await supabase
                 .from('profiles')
@@ -482,4 +522,176 @@ exports.getJobReportPDF = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+// 7. Check if Admin Exists in Database (Initial Setup Verification)
+exports.checkAdminStatus = async (req, res) => {
+    try {
+        const { count, error } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact' })
+            .eq('role', 'admin');
+
+        if (error) throw error;
+
+        const adminExists = (count || 0) > 0;
+        res.status(200).json({
+            success: true,
+            adminExists,
+            count: count || 0
+        });
+    } catch (error) {
+        console.error("Check admin status error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// 8. Register Admin (First Admin Setup / Multi-Admin Registration)
+exports.registerAdmin = async (req, res) => {
+    try {
+        const { fullName, email, password } = req.body;
+        if (!fullName || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: "Full name, email, and password are required"
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                error: "Password must be at least 6 characters long"
+            });
+        }
+
+        // Verify that no admin exists - exactly one administrator is allowed in the entire system
+        const { count: existingAdminCount, error: countErr } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact' })
+            .eq('role', 'admin');
+
+        if (countErr) throw countErr;
+
+        if ((existingAdminCount || 0) > 0) {
+            return res.status(403).json({
+                success: false,
+                error: "Registration closed. The system allows only one administrator, and an administrator account already exists."
+            });
+        }
+
+        // Try creating auth user in Supabase
+        const { user: authUser, session: authSession, error: authError } = await createAuthAccount(
+            email,
+            password,
+            { full_name: fullName, role: 'admin' }
+        );
+
+        if (authError) {
+            return res.status(400).json({ success: false, error: authError.message });
+        }
+
+        const userId = authUser?.id;
+        if (!userId) {
+            return res.status(400).json({ success: false, error: "Failed to create user account" });
+        }
+
+        // Insert into profiles table with role: 'admin'
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .insert([{
+                id: userId,
+                full_name: fullName,
+                role: 'admin'
+            }])
+            .select();
+
+        if (profileError) {
+            console.error("Profile insert error for admin:", profileError);
+            return res.status(500).json({
+                success: false,
+                error: "Failed to create admin profile: " + profileError.message
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: "System Administrator registered successfully!",
+            data: {
+                id: userId,
+                full_name: fullName,
+                email,
+                role: 'admin'
+            },
+            session: authSession || null
+        });
+    } catch (error) {
+        console.error("Admin registration error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// 9. Admin Login
+exports.loginAdmin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: "Email and password are required"
+            });
+        }
+
+        // Authenticate with Supabase Auth
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            if (error.message && error.message.toLowerCase().includes('email not confirmed')) {
+                return res.status(401).json({
+                    success: false,
+                    error: "Please confirm your email before signing in (check your inbox for verification link)."
+                });
+            }
+            return res.status(401).json({ success: false, error: error.message || "Invalid email or password" });
+        }
+
+        // Verify role in profiles table
+        const { data: profile, error: profError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+        if (profError || !profile) {
+            return res.status(403).json({
+                success: false,
+                error: "Admin profile not found. Please contact system administrator."
+            });
+        }
+
+        if (profile.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                error: "Access denied. Only administrator accounts can access this portal."
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Admin logged in successfully",
+            user: {
+                id: data.user.id,
+                email: data.user.email,
+                full_name: profile.full_name,
+                role: profile.role
+            },
+            session: data.session
+        });
+    } catch (error) {
+        console.error("Admin login error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
 

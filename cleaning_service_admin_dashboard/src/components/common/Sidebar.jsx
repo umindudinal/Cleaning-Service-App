@@ -6,15 +6,29 @@ import {
   UserCheck,
   ClipboardList,
   CalendarCheck,
-  LogOut,
-  Sparkles
+  LogOut
 } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function Sidebar() {
   const navigate = useNavigate();
 
+  const adminUser = React.useMemo(() => {
+    try {
+      const stored = localStorage.getItem('adminUser');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
+  const adminName = adminUser?.full_name || 'System Admin';
+  const adminEmail = adminUser?.email || 'admin@clean.com';
+  const initial = adminName ? adminName[0].toUpperCase() : 'A';
+
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
     navigate('/');
   };
 
@@ -30,13 +44,11 @@ export default function Sidebar() {
     <aside className="w-64 bg-slate-900 text-white flex flex-col justify-between shrink-0 shadow-xl min-h-screen">
       <div>
         {/* Brand Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-          <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-tight tracking-wide">JaniFlow</h1>
-            <p className="text-xs text-slate-400">Admin Control Center</p>
+        <div className="p-6 border-b border-slate-800 flex items-center space-x-3.5">
+          <BrandLogo className="w-10 h-10 shrink-0 drop-shadow-md" />
+          <div className="truncate">
+            <h1 className="font-extrabold text-lg leading-tight tracking-wide text-white">JaniFlow</h1>
+            <p className="text-xs text-slate-400 font-medium">Admin Control Center</p>
           </div>
         </div>
 
@@ -68,11 +80,11 @@ export default function Sidebar() {
       <div className="p-4 border-t border-slate-800">
         <div className="flex items-center space-x-3 mb-3 px-2">
           <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-            A
+            {initial}
           </div>
           <div className="truncate">
-            <p className="text-sm font-medium text-white">Company Admin</p>
-            <p className="text-xs text-slate-400 truncate">admin@clean.com</p>
+            <p className="text-sm font-medium text-white truncate">{adminName}</p>
+            <p className="text-xs text-slate-400 truncate">{adminEmail}</p>
           </div>
         </div>
         <button

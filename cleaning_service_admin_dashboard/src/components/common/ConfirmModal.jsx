@@ -1,0 +1,88 @@
+import { useEffect } from 'react';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
+
+export default function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = 'Delete Confirmation',
+  message = 'Are you sure you want to proceed? This action cannot be undone.',
+  confirmText = 'Delete',
+  cancelText = 'Cancel',
+  isDanger = true,
+  isLoading = false,
+}) {
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && !isLoading) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isLoading, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-opacity"
+      onClick={() => {
+        if (!isLoading) onClose();
+      }}
+    >
+      <div
+        className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Icon */}
+        <div
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
+            isDanger ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+          }`}
+        >
+          {isDanger ? <Trash2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+        </div>
+
+        {/* Text Content */}
+        <h3 className="text-lg font-bold text-slate-800 leading-snug">{title}</h3>
+        <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">{message}</p>
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end space-x-3 mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
+          >
+            {cancelText}
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={`flex-1 px-4 py-2.5 rounded-xl text-white font-semibold text-sm transition cursor-pointer shadow-md flex items-center justify-center space-x-1.5 disabled:opacity-50 ${
+              isDanger
+                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
+                : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
+            }`}
+          >
+            <span>{confirmText}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

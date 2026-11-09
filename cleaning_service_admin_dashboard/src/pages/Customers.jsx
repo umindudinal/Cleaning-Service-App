@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Users } from 'lucide-react';
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
+import ConfirmModal from '../components/common/ConfirmModal';
 import CustomerTable from '../components/customers/CustomerTable';
 import CustomerModal from '../components/customers/CustomerModal';
 import { AdminAPI } from '../services/api';
@@ -15,6 +16,10 @@ export default function Customers() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+
+  // Delete Confirmation Modal state
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -61,16 +66,24 @@ export default function Customers() {
     }
   };
 
-  const handleDeleteCustomer = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+  const handleDeleteCustomer = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      const res = await AdminAPI.deleteCustomer(id);
+      const res = await AdminAPI.deleteCustomer(deleteTargetId);
       if (res.success) {
         showToast('Customer deleted successfully!');
+        setDeleteTargetId(null);
         loadCustomers();
       }
     } catch (err) {
       showToast(err.response?.data?.error || err.message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -145,6 +158,16 @@ export default function Customers() {
         editingCustomer={editingCustomer}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveCustomer}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Customer"
+        message="Are you sure you want to delete this customer? All associated jobs and checklists will be affected."
+        confirmText="Delete Customer"
+        isLoading={isDeleting}
       />
     </div>
   );

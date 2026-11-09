@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
+import ConfirmModal from '../components/common/ConfirmModal';
 import JobTable from '../components/jobs/JobTable';
 import JobModal from '../components/jobs/JobModal';
 import { AdminAPI } from '../services/api';
@@ -14,6 +15,8 @@ export default function Jobs() {
   const [message, setMessage] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'completed'
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadJobsData();
@@ -56,16 +59,24 @@ export default function Jobs() {
     }
   };
 
-  const handleDeleteJob = async (id) => {
-    if (!window.confirm('Are you sure you want to cancel / delete this cleaning job?')) return;
+  const handleDeleteJob = (id) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
     try {
-      const res = await AdminAPI.deleteJob(id);
+      const res = await AdminAPI.deleteJob(deleteTargetId);
       if (res.success) {
         showToast('Cleaning job removed successfully!');
+        setDeleteTargetId(null);
         loadJobsData();
       }
     } catch (err) {
       showToast(err.message, 'error');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -122,6 +133,16 @@ export default function Jobs() {
         staffList={staffList}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAssignJob}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteTargetId}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Cancel Cleaning Job"
+        message="Are you sure you want to cancel or remove this cleaning job assignment?"
+        confirmText="Remove Job"
+        isLoading={isDeleting}
       />
     </div>
   );

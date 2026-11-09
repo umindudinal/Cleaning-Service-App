@@ -10,6 +10,11 @@ const api = axios.create({
 });
 
 export const AdminAPI = {
+  // Auth & Admin Setup
+  checkAdminStatus: () => api.get('/check-status').then(res => res.data),
+  registerAdmin: (data) => api.post('/register', data).then(res => res.data),
+  loginAdmin: (data) => api.post('/login', data).then(res => res.data),
+
   // Stats
   getStats: () => api.get('/stats').then(res => res.data),
 
