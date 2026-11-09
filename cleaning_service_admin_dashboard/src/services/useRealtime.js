@@ -60,3 +60,4 @@ export function useRealtimeSubscription(tables, onUpdate, pollIntervalMs = 8000)
     };
   }, [JSON.stringify(tables), pollIntervalMs]);
 }
+
