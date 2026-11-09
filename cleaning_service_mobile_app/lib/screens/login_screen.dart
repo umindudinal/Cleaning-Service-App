@@ -33,14 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (_) {}
   }
 
-  void _fillDemoCredentials() {
-    setState(() {
-      _emailController.text = 'kamal@clean.com';
-      _passwordController.text = 'CleanPro@123';
-    });
-    _showNotice('Staff demo credentials applied');
-  }
-
   Future<void> _signIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -444,20 +436,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   'Sign In to Shift',
                                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                                 ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 14),
-
-                      // Quick Demo Fill
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: _fillDemoCredentials,
-                          icon: const Icon(Icons.bolt_rounded, size: 16, color: AppColors.accent),
-                          label: const Text(
-                            'Fill Demo Staff Credentials',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent),
-                          ),
                         ),
                       ),
                     ],
