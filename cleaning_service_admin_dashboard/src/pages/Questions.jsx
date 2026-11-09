@@ -41,7 +41,7 @@ export default function Questions() {
       if (qRes.success) setQuestions(qRes.data);
       if (cRes.success) setCustomers(cRes.data);
     } catch (err) {
-      showToast('Failed to load checklist questions or customers.', 'error');
+      showToast('Failed to load questions.', 'error');
     } finally {
       setLoading(false);
     }
@@ -52,14 +52,14 @@ export default function Questions() {
       if (editingQuestion) {
         const res = await AdminAPI.updateQuestion(editingQuestion.id, formData);
         if (res.success) {
-          showToast('Customer checklist question updated!');
+          showToast('Question updated.');
           setIsModalOpen(false);
           loadQuestionsAndCustomers();
         }
       } else {
         const res = await AdminAPI.createQuestion(formData);
         if (res.success) {
-          showToast('New checklist question added for this customer!');
+          showToast('Question added.');
           setIsModalOpen(false);
           loadQuestionsAndCustomers();
         }
@@ -77,7 +77,7 @@ export default function Questions() {
         questionText: q.question_text
       });
       if (res.success) {
-        showToast(`Question ${!q.is_active ? 'enabled' : 'disabled'} for mobile app!`);
+        showToast(`Question ${!q.is_active ? 'enabled' : 'disabled'}.`);
         loadQuestionsAndCustomers();
       }
     } catch (err) {
@@ -95,7 +95,7 @@ export default function Questions() {
     try {
       const res = await AdminAPI.deleteQuestion(deleteTargetId);
       if (res.success) {
-        showToast('Checklist question deleted successfully!');
+        showToast('Question deleted.');
         setDeleteTargetId(null);
         loadQuestionsAndCustomers();
       }
@@ -106,14 +106,11 @@ export default function Questions() {
     }
   };
 
-  // Filter & Search
   const filteredQuestions = questions.filter((q) => {
-    // Customer filter
     if (selectedCustomerFilter !== 'all' && q.customer_id !== selectedCustomerFilter) {
       return false;
     }
 
-    // Search query
     if (!search.trim()) return true;
     const term = search.toLowerCase();
     const text = (q.question_text || '').toLowerCase();
@@ -123,11 +120,10 @@ export default function Questions() {
   });
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
       <Header
-        section="Quality Assurance"
-        title="Inspection Checklist Items"
-        subtitle="Configure client-specific cleaning criteria for the JaniFlow mobile inspection app"
+        title="Inspection Questions"
+        subtitle="Manage checklist items for property inspections"
         onRefresh={loadQuestionsAndCustomers}
         isRefreshing={loading}
         actionButton={
@@ -136,54 +132,52 @@ export default function Questions() {
               setEditingQuestion(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Checklist Item</span>
+            <span>Add Question</span>
           </button>
         }
       />
 
       <Toast message={message} />
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
         {/* Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          {/* Customer Filter Dropdown */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200">
           <div className="flex items-center space-x-2 w-full sm:w-auto">
-            <Filter className="w-4 h-4 text-blue-600 shrink-0" />
-            <span className="text-xs font-bold text-slate-700 shrink-0">Filter Client:</span>
+            <Filter className="w-4 h-4 text-gray-500 shrink-0" />
+            <span className="text-xs font-medium text-gray-700 shrink-0">Filter Customer:</span>
             <select
               value={selectedCustomerFilter}
               onChange={(e) => setSelectedCustomerFilter(e.target.value)}
-              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 text-slate-800"
+              className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500 outline-none bg-gray-50 text-gray-800"
             >
-              <option value="all">All Clients ({questions.length} items)</option>
+              <option value="all">All Customers ({questions.length})</option>
               {customers.map((c) => {
                 const count = questions.filter((q) => q.customer_id === c.id).length;
                 return (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({count} items)
+                    {c.name} ({count})
                   </option>
                 );
               })}
             </select>
           </div>
 
-          {/* Search Questions Input */}
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search checklist tasks..."
+              placeholder="Search questions..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full pl-9 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-gray-800"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -216,8 +210,8 @@ export default function Questions() {
         isOpen={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
-        title="Delete Inspection Question"
-        message="Are you sure you want to permanently delete this inspection checklist question? It will no longer appear on the mobile app for field staff."
+        title="Delete Question"
+        message="Are you sure you want to delete this question? It will no longer appear on the checklist."
         confirmText="Delete Question"
         isLoading={isDeleting}
       />

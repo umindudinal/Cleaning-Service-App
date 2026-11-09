@@ -46,7 +46,7 @@ export default function Customers() {
       if (custRes.success) setCustomers(custRes.data);
       if (staffRes.success) setStaffList(staffRes.data);
     } catch (err) {
-      showToast('Failed to load customers from backend.', 'error');
+      showToast('Failed to load customers.', 'error');
     } finally {
       setLoading(false);
     }
@@ -57,14 +57,14 @@ export default function Customers() {
       if (editingCustomer) {
         const res = await AdminAPI.updateCustomer(editingCustomer.id, formData);
         if (res.success) {
-          showToast('Customer updated successfully!');
+          showToast('Customer updated.');
           setIsModalOpen(false);
           loadCustomers();
         }
       } else {
         const res = await AdminAPI.createCustomer(formData);
         if (res.success) {
-          showToast('Customer added successfully!');
+          showToast('Customer added.');
           setIsModalOpen(false);
           loadCustomers();
         }
@@ -83,7 +83,7 @@ export default function Customers() {
     try {
       const res = await AdminAPI.createJob(formData);
       if (res.success) {
-        showToast('Cleaning job assigned successfully for this customer!');
+        showToast('Cleaning job assigned successfully.');
         setIsJobModalOpen(false);
       }
     } catch (err) {
@@ -101,7 +101,7 @@ export default function Customers() {
     try {
       const res = await AdminAPI.deleteCustomer(deleteTargetId);
       if (res.success) {
-        showToast('Customer deleted successfully!');
+        showToast('Customer deleted.');
         setDeleteTargetId(null);
         loadCustomers();
       }
@@ -120,11 +120,10 @@ export default function Customers() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
       <Header
-        section="Clients & Properties"
-        title="Customer Directory"
-        subtitle="Manage client accounts, service locations & direct job dispatching"
+        title="Customers"
+        subtitle="Manage customer profiles, service addresses, and assignments"
         onRefresh={loadCustomers}
         isRefreshing={loading}
         actionButton={
@@ -133,7 +132,7 @@ export default function Customers() {
               setEditingCustomer(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Customer</span>
@@ -143,40 +142,39 @@ export default function Customers() {
 
       <Toast message={message} />
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
         {/* Search Bar Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <div className="relative w-full sm:w-96">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email, address or phone..."
+              placeholder="Search by name, email, or address..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full pl-9 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-gray-800"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <div className="text-xs text-slate-500 font-medium">
-            Showing <strong className="text-slate-800">{filteredCustomers.length}</strong> of{' '}
-            <strong className="text-slate-800">{customers.length}</strong> registered clients
+          <div className="text-xs text-gray-500">
+            Total: <strong className="text-gray-800 font-semibold">{customers.length}</strong> customers
           </div>
         </div>
 
         {/* Customer Table */}
         {filteredCustomers.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-            <Users className="w-12 h-12 mx-auto mb-3 opacity-40 text-slate-400" />
-            <p className="font-bold text-slate-700 text-sm">No customers found</p>
-            <p className="text-xs text-slate-400 mt-1">
-              {search ? 'No clients match your search criteria.' : 'Click "Add Customer" above to register your first client.'}
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+            <Users className="w-10 h-10 mx-auto mb-2 opacity-30 text-gray-400" />
+            <p className="font-semibold text-gray-700 text-sm">No customers found</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {search ? 'No clients match your search query.' : 'Click "Add Customer" to add your first customer.'}
             </p>
           </div>
         ) : (
@@ -199,7 +197,6 @@ export default function Customers() {
         onSave={handleSaveCustomer}
       />
 
-      {/* Quick Assign Job Modal directly from customer row */}
       <JobModal
         isOpen={isJobModalOpen}
         customers={customers}
@@ -214,7 +211,7 @@ export default function Customers() {
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Customer"
-        message="Are you sure you want to permanently delete this customer? All their associated checklist items and job history will be removed."
+        message="Are you sure you want to delete this customer? This will also remove their job assignments."
         confirmText="Delete Customer"
         isLoading={isDeleting}
       />

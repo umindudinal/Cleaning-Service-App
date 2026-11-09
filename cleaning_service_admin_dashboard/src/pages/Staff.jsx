@@ -42,7 +42,7 @@ export default function Staff() {
       if (staffRes.success) setStaffList(staffRes.data);
       if (custRes.success) setCustomers(custRes.data);
     } catch (err) {
-      showToast('Failed to load staff list from backend.', 'error');
+      showToast('Failed to load staff list.', 'error');
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ export default function Staff() {
     try {
       const res = await AdminAPI.createStaff(formData);
       if (res.success) {
-        showToast('Staff member added successfully!');
+        showToast('Staff member added.');
         setIsModalOpen(false);
         loadStaff();
       }
@@ -70,7 +70,7 @@ export default function Staff() {
     try {
       const res = await AdminAPI.createJob(formData);
       if (res.success) {
-        showToast('Cleaning job assigned to staff successfully!');
+        showToast('Job assigned to staff successfully.');
         setIsJobModalOpen(false);
       }
     } catch (err) {
@@ -88,7 +88,7 @@ export default function Staff() {
     try {
       const res = await AdminAPI.deleteStaff(deleteTargetId);
       if (res.success) {
-        showToast('Staff member removed successfully!');
+        showToast('Staff member removed.');
         setDeleteTargetId(null);
         loadStaff();
       }
@@ -105,63 +105,62 @@ export default function Staff() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
       <Header
-        section="Field Personnel"
-        title="Cleaning Staff Roster"
-        subtitle="Manage active field cleaning personnel & JaniFlow mobile app credentials"
+        title="Staff"
+        subtitle="Manage cleaning personnel and mobile app login accounts"
         onRefresh={loadStaff}
         isRefreshing={loading}
         actionButton={
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Staff Member</span>
+            <span>Add Staff</span>
           </button>
         }
       />
 
       <Toast message={message} />
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
         {/* Search Bar Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <div className="relative w-full sm:w-96">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
               placeholder="Search staff by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full pl-9 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-gray-800"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <div className="text-xs text-slate-500 font-medium">
-            Total <strong className="text-slate-800">{filteredStaff.length}</strong> active cleaning personnel
+          <div className="text-xs text-gray-500">
+            Total: <strong className="text-gray-800 font-semibold">{staffList.length}</strong> staff members
           </div>
         </div>
 
         {/* Staff Grid */}
         {filteredStaff.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
-            <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-40 text-slate-400" />
-            <p className="font-bold text-slate-700 text-sm">No staff members found</p>
-            <p className="text-xs text-slate-400 mt-1">
-              {search ? 'No staff match your search query.' : 'Add staff members to assign house cleaning visits.'}
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400">
+            <UserCheck className="w-10 h-10 mx-auto mb-2 opacity-30 text-gray-400" />
+            <p className="font-semibold text-gray-700 text-sm">No staff members found</p>
+            <p className="text-xs text-gray-400 mt-1">
+              {search ? 'No staff match your search query.' : 'Click "Add Staff" to create an account.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStaff.map((s) => (
               <StaffCard
                 key={s.id}
@@ -193,8 +192,8 @@ export default function Staff() {
         isOpen={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
-        title="Remove Staff Member"
-        message="Are you sure you want to remove this cleaning staff member? Their access to the mobile app will be permanently revoked."
+        title="Remove Staff"
+        message="Are you sure you want to remove this staff member? They will no longer be able to log in to the mobile app."
         confirmText="Remove Staff"
         isLoading={isDeleting}
       />

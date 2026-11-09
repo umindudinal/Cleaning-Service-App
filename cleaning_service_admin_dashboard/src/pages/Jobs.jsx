@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, CalendarCheck, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -41,7 +41,7 @@ export default function Jobs() {
       if (custRes.success) setCustomers(custRes.data);
       if (staffRes.success) setStaffList(staffRes.data);
     } catch (err) {
-      showToast('Failed to load jobs data from backend.', 'error');
+      showToast('Failed to load jobs data.', 'error');
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export default function Jobs() {
     try {
       const res = await AdminAPI.createJob(formData);
       if (res.success) {
-        showToast('Cleaning job assigned to staff successfully!');
+        showToast('Cleaning job assigned successfully.');
         setIsModalOpen(false);
         loadJobsData();
       }
@@ -70,7 +70,7 @@ export default function Jobs() {
     try {
       const res = await AdminAPI.deleteJob(deleteTargetId);
       if (res.success) {
-        showToast('Cleaning job removed successfully!');
+        showToast('Cleaning job removed.');
         setDeleteTargetId(null);
         loadJobsData();
       }
@@ -99,77 +99,74 @@ export default function Jobs() {
   const completedCount = jobs.filter((j) => (j.status || '').toLowerCase() === 'completed').length;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
       <Header
-        section="Dispatch Center"
-        title="Jobs & Task Assignments"
-        subtitle="Schedule property cleaning visits, track cleaner field progress & review inspection reports"
+        title="Jobs"
+        subtitle="Schedule and track cleaning visits"
         onRefresh={loadJobsData}
         isRefreshing={loading}
         actionButton={
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Assign New Job</span>
+            <span>Assign Job</span>
           </button>
         }
       />
 
       <Toast message={message} />
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
-        {/* Apple-style Segmented Filter & Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.03)]">
-          {/* Segmented Control Bar */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/60 w-full sm:w-auto">
+      <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5">
+        {/* Filter and Search Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-gray-200">
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
             <button
               onClick={() => setFilter('all')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 filter === 'all'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              All Jobs ({jobs.length})
+              All ({jobs.length})
             </button>
             <button
               onClick={() => setFilter('pending')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 filter === 'pending'
-                  ? 'bg-white text-amber-700 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-amber-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Pending ({pendingCount})
             </button>
             <button
               onClick={() => setFilter('completed')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 filter === 'completed'
-                  ? 'bg-white text-emerald-700 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               Completed ({completedCount})
             </button>
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
             <input
               type="text"
               placeholder="Search by customer, staff, or address..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9.5 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-800"
+              className="w-full pl-9 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-gray-800"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -193,8 +190,8 @@ export default function Jobs() {
         isOpen={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
-        title="Cancel Cleaning Job"
-        message="Are you sure you want to cancel or remove this cleaning job assignment?"
+        title="Remove Cleaning Job"
+        message="Are you sure you want to remove this cleaning job assignment?"
         confirmText="Remove Job"
         isLoading={isDeleting}
       />
