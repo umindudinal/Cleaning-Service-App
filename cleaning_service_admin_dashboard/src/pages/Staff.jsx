@@ -105,16 +105,17 @@ export default function Staff() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
       <Header
-        title="Cleaning Staff Management"
-        subtitle="Manage field cleaning personnel & JaniFlow mobile app authentication accounts"
+        section="Field Personnel"
+        title="Cleaning Staff Roster"
+        subtitle="Manage active field cleaning personnel & JaniFlow mobile app credentials"
         onRefresh={loadStaff}
         isRefreshing={loading}
         actionButton={
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Staff Member</span>

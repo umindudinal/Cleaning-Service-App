@@ -81,13 +81,10 @@ export default function Jobs() {
     }
   };
 
-  // Filter & Search
   const filteredJobs = jobs.filter((j) => {
-    // Status filter
     const statusMatch = filter === 'all' || (j.status || '').toLowerCase() === filter;
     if (!statusMatch) return false;
 
-    // Search query
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const custName = (j.customers?.name || '').toLowerCase();
@@ -102,16 +99,17 @@ export default function Jobs() {
   const completedCount = jobs.filter((j) => (j.status || '').toLowerCase() === 'completed').length;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
       <Header
+        section="Dispatch Center"
         title="Jobs & Task Assignments"
-        subtitle="Dispatch cleaning staff, track completion & review inspection PDF proofs"
+        subtitle="Schedule property cleaning visits, track cleaner field progress & review inspection reports"
         onRefresh={loadJobsData}
         isRefreshing={loading}
         actionButton={
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Assign New Job</span>
@@ -122,36 +120,36 @@ export default function Jobs() {
       <Toast message={message} />
 
       <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
-        {/* Search & Filter Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
-          {/* Status Filter Chips */}
-          <div className="flex items-center space-x-2 w-full sm:w-auto">
+        {/* Apple-style Segmented Filter & Search Toolbar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(15,23,42,0.03)]">
+          {/* Segmented Control Bar */}
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/60 w-full sm:w-auto">
             <button
               onClick={() => setFilter('all')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filter === 'all'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               All Jobs ({jobs.length})
             </button>
             <button
               onClick={() => setFilter('pending')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filter === 'pending'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-white text-amber-700 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Pending ({pendingCount})
             </button>
             <button
               onClick={() => setFilter('completed')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 filter === 'completed'
-                  ? 'bg-green-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-white text-emerald-700 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               Completed ({completedCount})
@@ -160,18 +158,18 @@ export default function Jobs() {
 
           {/* Search Input */}
           <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search by customer, staff, or address..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              className="w-full pl-9.5 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white text-slate-800"
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

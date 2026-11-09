@@ -123,10 +123,11 @@ export default function Questions() {
   });
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[#F8FAFC]">
       <Header
+        section="Quality Assurance"
         title="Inspection Checklist Items"
-        subtitle="Configure property-specific checklist questions for field cleaning staff"
+        subtitle="Configure client-specific cleaning criteria for the JaniFlow mobile inspection app"
         onRefresh={loadQuestionsAndCustomers}
         isRefreshing={loading}
         actionButton={
@@ -135,7 +136,7 @@ export default function Questions() {
               setEditingQuestion(null);
               setIsModalOpen(true);
             }}
-            className="flex items-center space-x-1.5 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 shadow-sm transition cursor-pointer"
+            className="flex items-center space-x-1.5 bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md shadow-blue-600/20 transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Checklist Item</span>
