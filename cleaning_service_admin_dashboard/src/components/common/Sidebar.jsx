@@ -1,33 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   CalendarCheck,
   Users,
   UserCheck,
-  ClipboardList,
-  LogOut
+  ClipboardList
 } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 import { AdminAPI } from '../../services/api';
 
 export default function Sidebar() {
-  const navigate = useNavigate();
   const location = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
-
-  const adminUser = React.useMemo(() => {
-    try {
-      const stored = localStorage.getItem('adminUser');
-      return stored ? JSON.parse(stored) : null;
-    } catch (e) {
-      return null;
-    }
-  }, []);
-
-  const adminName = adminUser?.full_name || 'System Admin';
-  const adminEmail = adminUser?.email || 'admin@clean.com';
-  const initial = adminName ? adminName[0].toUpperCase() : 'A';
 
   useEffect(() => {
     let mounted = true;
@@ -42,12 +27,6 @@ export default function Sidebar() {
       mounted = false;
     };
   }, [location.pathname]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth');
-    localStorage.removeItem('adminUser');
-    navigate('/');
-  };
 
   const navItems = [
     { name: 'Overview', path: '/dashboard/overview', icon: LayoutDashboard },
@@ -105,25 +84,9 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Admin Profile & Logout */}
-      <div className="p-3 border-t border-gray-200">
-        <div className="flex items-center space-x-3 px-2 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-bold text-xs shrink-0 border border-gray-200">
-            {initial}
-          </div>
-          <div className="truncate">
-            <p className="text-xs font-semibold text-gray-900 truncate leading-tight">{adminName}</p>
-            <p className="text-[11px] text-gray-500 truncate">{adminEmail}</p>
-          </div>
-        </div>
-
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors cursor-pointer"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span>Sign Out</span>
-        </button>
+      {/* Footer subtle brand / app info */}
+      <div className="p-4 border-t border-gray-100">
+        <p className="text-[11px] text-gray-400 text-center font-medium">JaniFlow Portal v1.0</p>
       </div>
     </aside>
   );
