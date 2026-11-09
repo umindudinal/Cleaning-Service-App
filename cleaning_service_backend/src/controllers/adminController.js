@@ -406,11 +406,21 @@ exports.createJob = async (req, res) => {
             return res.status(400).json({ success: false, error: "customerId and staffId are required" });
         }
 
+        const todayStr = new Date().toISOString().split('T')[0];
+        const assignedDate = jobDate || todayStr;
+
+        if (assignedDate < todayStr) {
+            return res.status(400).json({
+                success: false,
+                error: "Scheduled visit date cannot be in the past. Please select today or a future date."
+            });
+        }
+
         const newJob = {
             customer_id: customerId,
             staff_id: staffId,
             status: 'pending',
-            job_date: jobDate || new Date().toISOString().split('T')[0]
+            job_date: assignedDate
         };
 
         const { data, error } = await supabase

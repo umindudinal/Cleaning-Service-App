@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, CalendarCheck, AlertCircle } from 'lucide-react';
 
 export default function JobModal({ isOpen, onClose, onSave, customers = [], staffList = [], initialCustomerId = '', initialStaffId = '' }) {
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const [form, setForm] = useState({
     customerId: '',
     staffId: '',
-    jobDate: new Date().toISOString().split('T')[0],
+    jobDate: todayStr,
   });
   const [error, setError] = useState('');
 
@@ -14,11 +16,11 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
       setForm({
         customerId: initialCustomerId || customers[0]?.id || '',
         staffId: initialStaffId || staffList[0]?.id || '',
-        jobDate: new Date().toISOString().split('T')[0],
+        jobDate: todayStr,
       });
       setError('');
     }
-  }, [isOpen, initialCustomerId, initialStaffId, customers, staffList]);
+  }, [isOpen, initialCustomerId, initialStaffId, customers, staffList, todayStr]);
 
   if (!isOpen) return null;
 
@@ -26,6 +28,10 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
     e.preventDefault();
     if (!form.customerId || !form.staffId) {
       setError('Please select both a Customer and a Staff member.');
+      return;
+    }
+    if (form.jobDate < todayStr) {
+      setError('Scheduled date cannot be in the past. Please select today or a future date.');
       return;
     }
     setError('');
@@ -100,10 +106,12 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
             <input
               type="date"
               required
+              min={todayStr}
               value={form.jobDate}
               onChange={(e) => setForm({ ...form, jobDate: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white text-gray-900"
             />
+            <p className="text-[11px] text-gray-400 mt-1">Must be today or a future date.</p>
           </div>
 
           <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
