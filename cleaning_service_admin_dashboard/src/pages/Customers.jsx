@@ -7,6 +7,7 @@ import CustomerTable from '../components/customers/CustomerTable';
 import CustomerModal from '../components/customers/CustomerModal';
 import JobModal from '../components/jobs/JobModal';
 import { AdminAPI } from '../services/api';
+import { useRealtimeSubscription } from '../services/useRealtime';
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -28,7 +29,7 @@ export default function Customers() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadCustomers();
+    loadCustomers(true);
   }, []);
 
   const showToast = (text, type = 'success') => {
@@ -36,8 +37,8 @@ export default function Customers() {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const loadCustomers = async () => {
-    setLoading(true);
+  const loadCustomers = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [custRes, staffRes] = await Promise.all([
         AdminAPI.getCustomers(),
@@ -46,11 +47,18 @@ export default function Customers() {
       if (custRes.success) setCustomers(custRes.data);
       if (staffRes.success) setStaffList(staffRes.data);
     } catch (err) {
-      showToast('Failed to load customers.', 'error');
+      if (showSpinner) {
+        showToast('Failed to load customers.', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  // Real-time synchronization
+  useRealtimeSubscription(['customers', 'staff'], () => {
+    loadCustomers(false);
+  });
 
   const handleSaveCustomer = async (formData) => {
     try {

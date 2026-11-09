@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,24 +9,28 @@ import {
 } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 import { AdminAPI } from '../../services/api';
+import { useRealtimeSubscription } from '../../services/useRealtime';
 
 export default function Sidebar() {
   const location = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
 
-  useEffect(() => {
-    let mounted = true;
+  const syncPendingCount = useCallback(() => {
     AdminAPI.getStats()
       .then((res) => {
-        if (mounted && res.success && res.data?.pendingJobs !== undefined) {
+        if (res.success && res.data?.pendingJobs !== undefined) {
           setPendingCount(res.data.pendingJobs);
         }
       })
       .catch(() => {});
-    return () => {
-      mounted = false;
-    };
-  }, [location.pathname]);
+  }, []);
+
+  useEffect(() => {
+    syncPendingCount();
+  }, [location.pathname, syncPendingCount]);
+
+  // Real-time update for pending jobs count badge
+  useRealtimeSubscription(['jobs'], syncPendingCount);
 
   const navItems = [
     { name: 'Overview', path: '/dashboard/overview', icon: LayoutDashboard },

@@ -7,6 +7,7 @@ import StaffCard from '../components/staff/StaffCard';
 import StaffModal from '../components/staff/StaffModal';
 import JobModal from '../components/jobs/JobModal';
 import { AdminAPI } from '../services/api';
+import { useRealtimeSubscription } from '../services/useRealtime';
 
 export default function Staff() {
   const [staffList, setStaffList] = useState([]);
@@ -24,7 +25,7 @@ export default function Staff() {
   const [targetStaffForJob, setTargetStaffForJob] = useState(null);
 
   useEffect(() => {
-    loadStaff();
+    loadStaff(true);
   }, []);
 
   const showToast = (text, type = 'success') => {
@@ -32,8 +33,8 @@ export default function Staff() {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const loadStaff = async () => {
-    setLoading(true);
+  const loadStaff = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [staffRes, custRes] = await Promise.all([
         AdminAPI.getStaff(),
@@ -42,11 +43,18 @@ export default function Staff() {
       if (staffRes.success) setStaffList(staffRes.data);
       if (custRes.success) setCustomers(custRes.data);
     } catch (err) {
-      showToast('Failed to load staff list.', 'error');
+      if (showSpinner) {
+        showToast('Failed to load staff list.', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  // Real-time synchronization
+  useRealtimeSubscription(['staff'], () => {
+    loadStaff(false);
+  });
 
   const handleSaveStaff = async (formData) => {
     try {

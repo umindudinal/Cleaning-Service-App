@@ -6,6 +6,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import JobTable from '../components/jobs/JobTable';
 import JobModal from '../components/jobs/JobModal';
 import { AdminAPI } from '../services/api';
+import { useRealtimeSubscription } from '../services/useRealtime';
 
 export default function Jobs() {
   const [jobs, setJobs] = useState([]);
@@ -20,7 +21,7 @@ export default function Jobs() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadJobsData();
+    loadJobsData(true);
   }, []);
 
   const showToast = (text, type = 'success') => {
@@ -28,8 +29,8 @@ export default function Jobs() {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const loadJobsData = async () => {
-    setLoading(true);
+  const loadJobsData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [jobsRes, custRes, staffRes] = await Promise.all([
         AdminAPI.getJobs(),
@@ -41,11 +42,18 @@ export default function Jobs() {
       if (custRes.success) setCustomers(custRes.data);
       if (staffRes.success) setStaffList(staffRes.data);
     } catch (err) {
-      showToast('Failed to load jobs data.', 'error');
+      if (showSpinner) {
+        showToast('Failed to load jobs data.', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  // Real-time synchronization on jobs, customers, and staff
+  useRealtimeSubscription(['jobs', 'customers', 'staff'], () => {
+    loadJobsData(false);
+  });
 
   const handleAssignJob = async (formData) => {
     try {

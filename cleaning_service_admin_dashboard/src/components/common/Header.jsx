@@ -45,6 +45,12 @@ export default function Header({ title, subtitle, onRefresh, isRefreshing, actio
       </div>
 
       <div className="flex items-center space-x-3">
+        {/* Live Realtime Indicator */}
+        <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs text-gray-600" title="Real-time data synchronization active">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="text-[11px] font-medium text-gray-500">Live</span>
+        </div>
+
         {onRefresh && (
           <button
             onClick={onRefresh}
@@ -70,7 +76,7 @@ export default function Header({ title, subtitle, onRefresh, isRefreshing, actio
               {initial}
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-xs font-semibold text-gray-800 leading-tight truncate max-w-[120px]">
+              <p className="text-xs font-semibold text-gray-800 leading-tight truncate max-w-30">
                 {adminName}
               </p>
               <p className="text-[10px] text-gray-400 font-medium leading-tight">Admin</p>

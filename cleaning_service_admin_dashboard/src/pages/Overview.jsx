@@ -16,6 +16,7 @@ import {
 import Header from '../components/common/Header';
 import Toast from '../components/common/Toast';
 import { AdminAPI } from '../services/api';
+import { useRealtimeSubscription } from '../services/useRealtime';
 
 export default function Overview() {
   const navigate = useNavigate();
@@ -32,11 +33,11 @@ export default function Overview() {
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
-    loadOverviewData();
+    loadOverviewData(true);
   }, []);
 
-  const loadOverviewData = async () => {
-    setLoading(true);
+  const loadOverviewData = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [statsRes, jobsRes, qRes] = await Promise.all([
         AdminAPI.getStats(),
@@ -47,11 +48,18 @@ export default function Overview() {
       if (statsRes.success) setStats(statsRes.data);
       if (jobsRes.success) setRecentJobs(jobsRes.data.slice(0, 8));
     } catch (err) {
-      setMessage({ text: 'Failed to load dashboard data.', type: 'error' });
+      if (showSpinner) {
+        setMessage({ text: 'Failed to load dashboard data.', type: 'error' });
+      }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  // Real-time synchronization
+  useRealtimeSubscription(['jobs', 'customers', 'staff', 'questions'], () => {
+    loadOverviewData(false);
+  });
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">

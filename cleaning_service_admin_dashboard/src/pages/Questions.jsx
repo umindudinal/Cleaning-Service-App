@@ -6,6 +6,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 import QuestionTable from '../components/questions/QuestionTable';
 import QuestionModal from '../components/questions/QuestionModal';
 import { AdminAPI } from '../services/api';
+import { useRealtimeSubscription } from '../services/useRealtime';
 
 export default function Questions() {
   const [questions, setQuestions] = useState([]);
@@ -22,7 +23,7 @@ export default function Questions() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadQuestionsAndCustomers();
+    loadQuestionsAndCustomers(true);
   }, []);
 
   const showToast = (text, type = 'success') => {
@@ -30,8 +31,8 @@ export default function Questions() {
     setTimeout(() => setMessage(null), 4000);
   };
 
-  const loadQuestionsAndCustomers = async () => {
-    setLoading(true);
+  const loadQuestionsAndCustomers = async (showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     try {
       const [qRes, cRes] = await Promise.all([
         AdminAPI.getQuestions(),
@@ -41,11 +42,18 @@ export default function Questions() {
       if (qRes.success) setQuestions(qRes.data);
       if (cRes.success) setCustomers(cRes.data);
     } catch (err) {
-      showToast('Failed to load questions.', 'error');
+      if (showSpinner) {
+        showToast('Failed to load questions.', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
+
+  // Real-time synchronization
+  useRealtimeSubscription(['questions', 'customers'], () => {
+    loadQuestionsAndCustomers(false);
+  });
 
   const handleSaveQuestion = async (formData) => {
     try {
