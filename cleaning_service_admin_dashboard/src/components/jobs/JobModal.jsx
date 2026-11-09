@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, CalendarCheck, AlertCircle } from 'lucide-react';
 
+// Get local date formatted as YYYY-MM-DD (matches user's local timezone, avoids UTC shift bug)
+const getLocalDateString = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function JobModal({ isOpen, onClose, onSave, customers = [], staffList = [], initialCustomerId = '', initialStaffId = '' }) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
 
   const [form, setForm] = useState({
     customerId: '',
@@ -13,14 +21,15 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
 
   useEffect(() => {
     if (isOpen) {
+      const currentToday = getLocalDateString();
       setForm({
         customerId: initialCustomerId || customers[0]?.id || '',
         staffId: initialStaffId || staffList[0]?.id || '',
-        jobDate: todayStr,
+        jobDate: currentToday,
       });
       setError('');
     }
-  }, [isOpen, initialCustomerId, initialStaffId, customers, staffList, todayStr]);
+  }, [isOpen, initialCustomerId, initialStaffId, customers, staffList]);
 
   if (!isOpen) return null;
 
@@ -30,7 +39,8 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
       setError('Please select both a Customer and a Staff member.');
       return;
     }
-    if (form.jobDate < todayStr) {
+    const currentToday = getLocalDateString();
+    if (form.jobDate < currentToday) {
       setError('Scheduled date cannot be in the past. Please select today or a future date.');
       return;
     }
@@ -108,7 +118,15 @@ export default function JobModal({ isOpen, onClose, onSave, customers = [], staf
               required
               min={todayStr}
               value={form.jobDate}
-              onChange={(e) => setForm({ ...form, jobDate: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val && val < todayStr) {
+                  setError('Scheduled date cannot be in the past. Please select today or a future date.');
+                } else {
+                  setError('');
+                }
+                setForm({ ...form, jobDate: val });
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 outline-none bg-white text-gray-900"
             />
             <p className="text-[11px] text-gray-400 mt-1">Must be today or a future date.</p>

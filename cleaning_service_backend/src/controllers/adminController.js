@@ -406,10 +406,11 @@ exports.createJob = async (req, res) => {
             return res.status(400).json({ success: false, error: "customerId and staffId are required" });
         }
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        const assignedDate = jobDate || todayStr;
+        const now = new Date();
+        const localTodayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const assignedDate = jobDate || localTodayStr;
 
-        if (assignedDate < todayStr) {
+        if (assignedDate < localTodayStr) {
             return res.status(400).json({
                 success: false,
                 error: "Scheduled visit date cannot be in the past. Please select today or a future date."
